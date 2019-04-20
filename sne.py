@@ -64,38 +64,35 @@ class SNE:
             self.P[i,:i] = thisP[:i]
             self.P[i,i+1:] = thisP[i:]
         
-        np.savetxt('sne_P.txt', self.P)
         print('Mean value of sigma: %f' % np.mean(np.sqrt(1/self.beta)))
-        return self.P
 
     def train(self, perplexity=20.0):
-        Y = np.random.randn(self.num_train, self.no_dim)
-        dY = np.zeros((self.num_train, self.no_dim))
-        iY = np.zeros((self.num_train, self.no_dim))
         initial_momentum = 0.5
         final_momentum = 0.8
         maxiter = 1000
         eta = 500
         min_gain = 0.01
+        Y = np.random.randn(self.num_train, self.no_dim)
+        dY = np.zeros((self.num_train, self.no_dim))
+        iY = np.zeros((self.num_train, self.no_dim))
         gains = np.ones((self.num_train, self.no_dim))
 
         self.P_values(perplexity)
-        self.P = (self.P + self.P.T)/np.sum(self.P)
+        self.P = self.P + self.P.T
+        self.P = self.P / np.sum(self.P)
         self.P = self.P * 4
         self.P = np.maximum(self.P, 1e-12)
-
+        
         for i in range(maxiter):
-            Y_dist = self.distance(Y)
-            num = 1.0 / (1.0 + Y_dist)
+            num = 1.0 / (1.0 + self.distance(Y))
             num[range(self.num_train, self.num_train)] = 0
             Q = num / np.sum(num)
             Q = np.maximum(Q, 1e-12)
+            print('loss', np.sum(self.P * np.log(self.P / Q)))
 
             PQ = self.P - Q
             for k in range(self.num_train):
-                # dY[k,:] = -((PQ[k] * num[k])[:,None] * (Y - Y[k])).sum(axis=0)
-                # dY[k,:] = -((PQ[:,k] * num[:,k])[:,None] * (Y - Y[k])).sum(axis=0)
-                dY[k,:] = np.sum(np.tile(PQ[:,k]*num[:,k], (self.no_dim,1)).T * (Y[k,:]-Y),0)
+                dY[k,:] = -((PQ[k] * num[k])[:,None] * (Y - Y[k])).sum(axis=0)
 
             if i < 20:
                 momentum = initial_momentum
@@ -113,10 +110,10 @@ class SNE:
                 print('Iteration %d: error is %f' % (i+1, C))
 
             if i == 100:
-                self.P = self.P / 4
+                self.P = self.P / 4.
 
         return Y
-
+        
             
 if __name__ == '__main__':
     train_x = np.loadtxt('mnist2500_X.txt')

@@ -86,7 +86,6 @@ def x2p(X=np.array([]), tol=1e-5, perplexity=30.0):
         P[i, np.concatenate((np.r_[0:i], np.r_[i+1:n]))] = thisP
     # Return final P-matrix
     print("Mean value of sigma: %f" % np.mean(np.sqrt(1 / beta)))
-    np.savetxt('tsne_P.txt', P)
     return P
 
 
@@ -138,7 +137,7 @@ def tsne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
     P = P / np.sum(P)
     P = P * 4.									# early exaggeration
     P = np.maximum(P, 1e-12)
-
+    
     # Run iterations
     for iter in range(max_iter):
 
@@ -149,6 +148,7 @@ def tsne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
         num[range(n), range(n)] = 0.
         Q = num / np.sum(num)
         Q = np.maximum(Q, 1e-12)
+        print('loss', np.sum(P * np.log(P / Q)))
 
         # Compute gradient
         PQ = P - Q
@@ -178,7 +178,7 @@ def tsne(X=np.array([]), no_dims=2, initial_dims=50, perplexity=30.0):
 
     # Return solution
     return Y
-
+    
 
 if __name__ == "__main__":
     print("Run Y = tsne.tsne(X, no_dims, perplexity) to perform t-SNE on your dataset.")
